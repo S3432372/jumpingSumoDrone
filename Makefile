@@ -8,16 +8,6 @@ CC=gcc
 CFLAGS=-I$(IDIR) -I $(SDK_DIR)/include \
 `pkg-config --cflags opencv`
 
-#OpenCV Library Directory (Including OpenCV2)
-#CPPFLAGS= -I/home/user/opencv-2.4.13/include/opencv \
--I/home/user/opencv-2.4.13/include/opencv2
-
-#Libraries
-#LDLIBS= -lopencv_core -lopencv_imgproc -lopencv_highgui \
-		 -lopencv_ml -lopencv_video -lopencv_features2d \
-	 -lopencv_calib3d -lopencv_objdetect \
-	 -lv4l1 -lv4l2 -lv4lconvert -lopencv_imgcodecs
-
 LDLIBS = `pkg-config --libs opencv`
 OBJDIR=obj
 LDIR = $(SDK_DIR)/lib
