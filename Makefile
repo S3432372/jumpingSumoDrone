@@ -1,7 +1,7 @@
 EXEC_NAME=JumpingSumoPiloting
 
 #ARDrone SDK Directory
-SDK_DIR=/home/user/sdk/out/Unix-base/staging/usr
+SDK_DIR=/Users/Caltheduck/Desktop/sdk/out/Unix-base/staging/usr
 
 IDIR=./
 CC=gcc
