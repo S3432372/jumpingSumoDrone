@@ -18,7 +18,7 @@ EXTERNAL_LIB=-lncurses
 -larmedia -larnetwork -larnetworkal -larstream -larsal\
 -larstream2 $(EXTERNAL_LIB)
 
-LIBS = \
+#LIBS = \
 $(LDIR)/libarcontroller.a $(LDIR)/libarcontroller.so\
 $(LDIR)/libarstream2.a $(LDIR)/libarstream2.so\
 $(LDIR)/libarsal.a $(LDIR)/libarsal.so\
@@ -29,6 +29,19 @@ $(LDIR)/libarnetwork.a $(LDIR)/libarnetwork.so\
 $(LDIR)/libarnetworkal.a $(LDIR)/libarnetworkal.so\
 $(LDIR)/libarstream.a $(LDIR)/libarstream.so\
 $(LDIR)/libjson.a $(LDIR)/libjson.so\
+$(EXTERNAL_LIB)
+
+LIBS = \
+$(LDIR)/libarcontroller.a\
+$(LDIR)/libarstream2.a\
+$(LDIR)/libarsal.a\
+$(LDIR)/libarcommands.a\
+$(LDIR)/libardiscovery.a\
+$(LDIR)/libarmedia.a\
+$(LDIR)/libarnetwork.a\
+$(LDIR)/libarnetworkal.a\
+$(LDIR)/libarstream.a\
+$(LDIR)/libjson.a\
 $(EXTERNAL_LIB)
 
 #LIBS_DBG=-L$(SDK_DIR)/lib -larsal_dbg -larcommands_dbg -larnetwork_dbg -larnetworkal_dbg -lardiscovery_dbg -larstream_dbg $(EXTERNAL_LIB)
