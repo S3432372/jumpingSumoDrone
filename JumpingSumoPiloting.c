@@ -349,11 +349,6 @@ int main (int argc, char *argv[])
     }*/
 
         //
-            //OpenCV Video Capture Variable
-            CvCapture *capture;
-
-            //Open CV Image (Type .IPL) Variable
-            IplImage *imgOriginal;
 
         //
 
@@ -523,6 +518,36 @@ eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *
     //Add a print line to check if it's working
     printf("Inside didReceiveFrameCallback\n");
 
+    //OpenCV Colour Recognition Code
+
+    //While loop to continously fetch frame
+    while (1)
+    {
+        //Setup Frame Variables
+        IplImage *currframe;
+        IplImage *iplFrame;
+
+        currframe = cvCreateImage(cvSize(320,240), IPL_DEPTH_8U, 3);
+        iplFrame = cvCreateImage(cvSize(320,240), IPL_DEPTH_8U, 3);
+
+        //Convert ARDrone Frame to IplImage
+        currframe->imageData = frame->data;
+        cvCvtColor(currframe, iplFrame, CV_BGR2RGB);
+        cvReleaseImage(&currframe); 
+
+        //Show Frame
+        cvShowImage("openCV Video Feed", iplFrame);
+
+         //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
+        if (cvWaitKey(30) == 27)
+        {
+            printf("esc key is pressed by user\n");
+            break;
+        }
+    }
+
+
+    //Video Out Code
     if (videoOut != NULL)
     {
         if (frame != NULL)
@@ -646,4 +671,3 @@ int customPrintCallback (eARSAL_PRINT_LEVEL level, const char *tag, const char *
 
     return 1;
 }
-
