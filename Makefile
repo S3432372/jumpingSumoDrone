@@ -1,7 +1,7 @@
 EXEC_NAME=JumpingSumoPiloting
 
 #ARDrone SDK Directory
-SDK_DIR=/Users/Caltheduck/Desktop/sdk/out/Unix-base/staging/usr
+SDK_DIR=/home/user/sdk/out/Unix-base/staging/usr
 
 IDIR=./
 CC=gcc
@@ -14,11 +14,10 @@ LDIR = $(SDK_DIR)/lib
 
 EXTERNAL_LIB=-lncurses
 
-#LIBS=-L$(LDIR) -larcommands -larcontroller -lardiscovery \
--larmedia -larnetwork -larnetworkal -larstream -larsal\
--larstream2 $(EXTERNAL_LIB)
-
-#LIBS = \
+OS := $(shell uname)
+ifeq ($(OS),Linux)
+# Linux Library Import
+LIBS = \
 $(LDIR)/libarcontroller.a $(LDIR)/libarcontroller.so\
 $(LDIR)/libarstream2.a $(LDIR)/libarstream2.so\
 $(LDIR)/libarsal.a $(LDIR)/libarsal.so\
@@ -30,7 +29,8 @@ $(LDIR)/libarnetworkal.a $(LDIR)/libarnetworkal.so\
 $(LDIR)/libarstream.a $(LDIR)/libarstream.so\
 $(LDIR)/libjson.a $(LDIR)/libjson.so\
 $(EXTERNAL_LIB)
-
+else
+# Other libray import
 LIBS = \
 $(LDIR)/libarcontroller.a\
 $(LDIR)/libarstream2.a\
@@ -43,6 +43,7 @@ $(LDIR)/libarnetworkal.a\
 $(LDIR)/libarstream.a\
 $(LDIR)/libjson.a\
 $(EXTERNAL_LIB)
+endif
 
 #LIBS_DBG=-L$(SDK_DIR)/lib -larsal_dbg -larcommands_dbg -larnetwork_dbg -larnetworkal_dbg -lardiscovery_dbg -larstream_dbg $(EXTERNAL_LIB)
 

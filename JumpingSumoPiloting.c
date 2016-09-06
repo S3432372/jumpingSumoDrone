@@ -348,10 +348,6 @@ int main (int argc, char *argv[])
         }
     }*/
 
-        //
-
-        //
-
     if (!failed)
     {
         IHM_PrintInfo(ihm, "Running ... (Arrow keys to move ; Spacebar to jump ; 'q' to quit)");
