@@ -46,6 +46,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
 #include <libARSAL/ARSAL.h>
 #include <libARController/ARController.h>
@@ -54,16 +56,12 @@
 #include "JumpingSumoPiloting.h"
 #include "ihm.h"
 
-//Open CV Libs
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-
 /*****************************************
  *
  *             define :
  *
  *****************************************/
-#define TAG "Group106"
+#define TAG "SDKExample"
 
 #define ERROR_STR_LENGTH 2048
 
@@ -149,12 +147,8 @@ int main (int argc, char *argv[])
         ARSAL_PRINT(ARSAL_PRINT_ERROR, "ERROR", "Mkfifo failed: %d, %s", errno, strerror(errno));
         return 1;
     }
-
     ARSAL_Sem_Init (&(stateSem), 0, 0);
-
-    ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "-- Jumping Sumo Piloting --");
-
-
+    ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "-- Search And Rescue --");
 
     if (!failed)
     {
@@ -163,7 +157,9 @@ int main (int argc, char *argv[])
             // fork the process to launch ffplay
             if ((child = fork()) == 0)
             {
-                execlp("xterm", "xterm", "-e", "mplayer", "-demuxer",  "lavf", fifo_name, "-benchmark", "-really-quiet", NULL);
+                execlp("ffplay", "ffplay", "-i", fifo_name, "-f", "mjpeg", NULL);
+                //execlp("mplayer", "mplayer", fifo_name, NULL);
+                //execlp("xterm", "xterm", "-e", "mplayer", "-demuxer",  "lavf", fifo_name, "-benchmark", "-really-quiet", NULL);
                 ARSAL_PRINT(ARSAL_PRINT_ERROR, TAG, "Missing mplayer, you will not see the video. Please install mplayer and xterm.");
                 return -1;
             }
@@ -185,7 +181,7 @@ int main (int argc, char *argv[])
                 ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "You did not choose to write image files.");
             }
         }
-
+    
         if (DISPLAY_WITH_MPLAYER)
         {
             videoOut = fopen(fifo_name, "w");
@@ -199,7 +195,7 @@ int main (int argc, char *argv[])
         gErrorStr[0] = '\0';
         ARSAL_Print_SetCallback (customPrintCallback); //use a custom callback to print, for not disturb ncurses IHM
 
-        IHM_PrintHeader (ihm, "-- Jumping Sumo Piloting --");
+        IHM_PrintHeader (ihm, "-- Search and Resuce --");
     }
     else
     {
@@ -234,18 +230,6 @@ int main (int argc, char *argv[])
             failed = 1;
         }
     }
-
-    //Discover device
-    /*
-    ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "- init discovey device ... ");
-    eARDISCOVERY_ERROR errorDiscovery = ARDISCOVERY_OK;
-
-    device = ARDISCOVERY_Device_New (&errorDiscovery);
-
-    ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "    - ARDISCOVERY_Device_InitWifi ...");
-    // create a JumpingSumo discovery device (ARDISCOVERY_PRODUCT_JS)
-    errorDiscovery = ARDISCOVERY_Device_InitWifi (device, ARDISCOVERY_PRODUCT_JS, "JS", JS_IP_ADDRESS, JS_DISCOVERY_PORT);
-    */
 
     // create a device controller
     if (!failed)
@@ -306,7 +290,6 @@ int main (int argc, char *argv[])
         }
     }
 
-    /*
     if (!failed)
     {
         IHM_PrintInfo(ihm, "Connecting ...");
@@ -320,7 +303,6 @@ int main (int argc, char *argv[])
         }
     }
 
-    // Checks device state
     if (!failed)
     {
         // wait state update update
@@ -346,20 +328,11 @@ int main (int argc, char *argv[])
             ARSAL_PRINT(ARSAL_PRINT_ERROR, TAG, "- error :%s", ARCONTROLLER_Error_ToString(error));
             failed = 1;
         }
-    }*/
-
-        //
-            //OpenCV Video Capture Variable
-            CvCapture *capture;
-
-            //Open CV Image (Type .IPL) Variable
-            IplImage *imgOriginal;
-
-        //
+    }
 
     if (!failed)
     {
-        IHM_PrintInfo(ihm, "Running ... (Arrow keys to move ; Spacebar to jump ; 'q' to quit)");
+        IHM_PrintInfo(ihm, "Running ... Press Up Key to begin search. Press 'q' to quit)");
 
 #ifdef IHM
         while (gIHMRun)
@@ -442,7 +415,6 @@ void stateChanged (eARCONTROLLER_DEVICE_STATE newState, eARCONTROLLER_ERROR erro
         ARSAL_Sem_Post (&(stateSem));
         //stop
         gIHMRun = 0;
-
         break;
 
     case ARCONTROLLER_DEVICE_STATE_RUNNING:
@@ -503,7 +475,6 @@ void commandReceived (eARCONTROLLER_DICTIONARY_KEY commandKey, ARCONTROLLER_DICT
 void batteryStateChanged (uint8_t percent)
 {
     // callback of changing of battery level
-
     if (ihm != NULL)
     {
         IHM_PrintBattery (ihm, percent);
@@ -520,17 +491,15 @@ eARCONTROLLER_ERROR decoderConfigCallback (ARCONTROLLER_Stream_Codec_t codec, vo
 
 eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *customData)
 {
-    //Add a print line to check if it's working
-    printf("Inside didReceiveFrameCallback\n");
+
 
     if (videoOut != NULL)
     {
         if (frame != NULL)
         {
             if (DISPLAY_WITH_MPLAYER)
-            {
+            { 
                 fwrite(frame->data, frame->used, 1, videoOut);
-
                 fflush (videoOut);
             }
             else if (writeImgs)
@@ -554,19 +523,110 @@ eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *
         ARSAL_PRINT(ARSAL_PRINT_WARNING, TAG, "videoOut is NULL.");
     }
 
+    //Setup Frame Variables
+        IplImage *currframe;
+        IplImage *iplFrame;
+        currframe = cvCreateImage(cvSize(320,240), IPL_DEPTH_8U, 3);
+        iplFrame = cvCreateImage(cvSize(320,240), IPL_DEPTH_8U, 3);
+        //Convert ARDrone Frame to IplImage
+        currframe->imageData = (char*)frame->data;
+        printf("%d\n", frame);
+        
+        cvCvtColor(currframe, iplFrame, CV_BGR2RGB);
+        cvReleaseImage(&currframe); 
+        //Show Frame
+        cvShowImage("openCV Video Feed", iplFrame);
+
+     //While loop to continously fetch frame
+    /*while (1)
+    {
+        //Setup Frame Variables
+        IplImage *currframe;
+        IplImage *iplFrame;
+
+        currframe = cvCreateImage(cvSize(320,240), IPL_DEPTH_8U, 3);
+        iplFrame = cvCreateImage(cvSize(320,240), IPL_DEPTH_8U, 3);
+
+        //Convert ARDrone Frame to IplImage
+        currframe->imageData = frame->data;
+        cvCvtColor(currframe, iplFrame, CV_BGR2RGB);
+        cvReleaseImage(&currframe); 
+
+        //Show Frame
+        cvShowImage("openCV Video Feed", iplFrame);
+
+         //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
+        if (cvWaitKey(30) == 27)
+        {
+            printf("esc key is pressed by user\n");
+            break;
+        }*/
+
     return ARCONTROLLER_OK;
 }
 
 
-// IHM callbacks:
-
-void onInputEvent (eIHM_INPUT_EVENT event, void *customData)
+void runSearchAndRescue (void *customData)
 {
-    // Manage IHM input events
+    int i, j;
+    int rotations = 5;
+    int SearchMovements = 2;
     ARCONTROLLER_Device_t *deviceController = (ARCONTROLLER_Device_t *)customData;
     eARCONTROLLER_ERROR error = ARCONTROLLER_OK;
 
-    switch (event)
+    for(j = 0; j < SearchMovements; j++)
+    {
+        for(i = 0; i < rotations; i++)
+        {
+            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
+            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 32);
+            usleep(400000);
+            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
+            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
+            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);
+            usleep(2000000);
+        }
+        error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
+        error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 40);
+        usleep(1000000);
+        error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
+        error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
+        error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);
+        usleep(2000000);
+    }
+
+    if (error != ARCONTROLLER_OK)
+    {
+        IHM_PrintInfo(ihm, "Error sending an event");
+    }
+}
+
+
+
+
+void onInputEvent (eIHM_INPUT_EVENT event, void *customData)
+{
+    ARCONTROLLER_Device_t *deviceController = (ARCONTROLLER_Device_t *)customData;
+    eARCONTROLLER_ERROR error = ARCONTROLLER_OK;
+    if(deviceController != NULL)
+    {
+        if(event == IHM_INPUT_EVENT_FORWARD)
+        {
+            runSearchAndRescue(customData);
+        }
+        else
+        {
+            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
+            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
+            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);
+        }
+        
+        if(event == IHM_INPUT_EVENT_EXIT)
+        {
+            gIHMRun = 0;
+        }
+    }
+    /*switch (event)
     {
     case IHM_INPUT_EVENT_EXIT:
         IHM_PrintInfo(ihm, "IHM_INPUT_EVENT_EXIT ...");
@@ -583,7 +643,6 @@ void onInputEvent (eIHM_INPUT_EVENT event, void *customData)
     case IHM_INPUT_EVENT_FORWARD:
         if(deviceController != NULL)
         {
-            IHM_PrintInfo(ihm, "IHM_INPUT_EVENT_FORWARD ...");
             // set the flag and speed value of the piloting command
             error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
             error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 50);
@@ -592,7 +651,6 @@ void onInputEvent (eIHM_INPUT_EVENT event, void *customData)
     case IHM_INPUT_EVENT_BACK:
         if(deviceController != NULL)
         {
-            IHM_PrintInfo(ihm, "IHM_INPUT_EVENT_BACK ...");
             error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
             error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, -50);
         }
@@ -600,7 +658,6 @@ void onInputEvent (eIHM_INPUT_EVENT event, void *customData)
     case IHM_INPUT_EVENT_RIGHT:
         if(deviceController != NULL)
         {
-            IHM_PrintInfo(ihm, "IHM_INPUT_EVENT_RIGHT ...");
             error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
             error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 50);
         }
@@ -608,7 +665,6 @@ void onInputEvent (eIHM_INPUT_EVENT event, void *customData)
     case IHM_INPUT_EVENT_LEFT:
         if(deviceController != NULL)
         {
-            IHM_PrintInfo(ihm, "IHM_INPUT_EVENT_LEFT ...");
             error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
             error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, -50);
         }
@@ -624,8 +680,7 @@ void onInputEvent (eIHM_INPUT_EVENT event, void *customData)
     default:
         break;
 
-    }
-
+    }*/
     // This should be improved, here it just displays that one error occured
     if (error != ARCONTROLLER_OK)
     {
@@ -646,4 +701,3 @@ int customPrintCallback (eARSAL_PRINT_LEVEL level, const char *tag, const char *
 
     return 1;
 }
-
