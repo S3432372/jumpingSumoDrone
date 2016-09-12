@@ -6,14 +6,12 @@ when the drone frame is converted correctly.
 The ball detection code uses your webcam and detects colour based on your toggled value. After the first code
 is working with the drone then this code will be tested next.
 
-<br/>
-Make file instructions:
-<br/>
-To compile the code run:
-<br/>
+The ball detection C++ code is added to compare the converted .c file to the original.
+
+<h3>Make file instructions</h3>
+To compile the code run:<br/>
 1. make
-<br/>
-To run the program type the desired one:
-<br/>
-2. a)./ball_detection
+
+To run the program type the desired one:<br/>
+2. a)./ball_detection<br/>
 b) ./openCVStream
