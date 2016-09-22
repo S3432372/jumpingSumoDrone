@@ -1,8 +1,6 @@
-
 /*
 #include "opencv2/highgui/highgui_c.h"
 #include "opencv2/imgproc/imgproc_c.h"
-
 #include <opencv/highgui.h>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgproc/imgproc_c.h>
@@ -28,6 +26,12 @@ int main( int argc, char** argv )
     imgTmp = cvQueryFrame(capture);   
 
     cvNamedWindow("Control", CV_WINDOW_AUTOSIZE); //create a window called "Control"
+	
+	//Boundaries the define the middle of the screen
+	int xUBound = 420;
+	int xLBound = 220;
+	int yUBound = 280;
+	int yLBound = 160;
 
     int iLowH = 170;
     int iHighH = 179;
@@ -100,12 +104,27 @@ int main( int argc, char** argv )
 		    int posX = dM10 / dArea;
 		    int posY = dM01 / dArea;
 
-		    
-		   /* if (iLastX >= 0 && iLastY >= 0 && posX >= 0 && posY >= 0)
-		    {
-				//Draw a red line from the previous point to the current point
-				line(imgLines, Point(posX, posY), Point(iLastX, iLastY), Scalar(0,0,255), 2);
-		    }*/
+			
+		    if (iLastX >= 0 && iLastY >= 0 && posX >= 0 && posY >= 0) {
+				// If object is in middle of screen
+				if (posX > xLBound && posX < xUBound) {
+					// Move forward
+					
+					// Stop once object takes up too much of screen
+				}
+				
+				else {
+					if (posX > xUBound ) {
+						// Turn Drone right a small amount
+					}
+					
+					else if (posX < xLBound) {
+						// Turn Drone left a small amount
+					}
+				}
+				
+			}
+			
 
 		    iLastX = posX;
 		    iLastY = posY;
