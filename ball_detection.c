@@ -114,13 +114,16 @@ int main( int argc, char** argv )
 				}
 				
 				else {
+					// If object is on the right of the screen
 					if (posX > xUBound ) {
 						// Turn Drone right a small amount
 					}
 					
-					else if (posX < xLBound) {
+					// If object is on the left of the screen or not on screen at all
+					else {
 						// Turn Drone left a small amount
 					}
+
 				}
 				
 			}
