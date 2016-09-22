@@ -236,7 +236,7 @@ int main (int argc, char *argv[])
     }
 
     //Discover device
-    /*
+    
     ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "- init discovey device ... ");
     eARDISCOVERY_ERROR errorDiscovery = ARDISCOVERY_OK;
 
@@ -245,7 +245,7 @@ int main (int argc, char *argv[])
     ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "    - ARDISCOVERY_Device_InitWifi ...");
     // create a JumpingSumo discovery device (ARDISCOVERY_PRODUCT_JS)
     errorDiscovery = ARDISCOVERY_Device_InitWifi (device, ARDISCOVERY_PRODUCT_JS, "JS", JS_IP_ADDRESS, JS_DISCOVERY_PORT);
-    */
+    
 
     // create a device controller
     if (!failed)
@@ -306,7 +306,7 @@ int main (int argc, char *argv[])
         }
     }
 
-    /*
+    
     if (!failed)
     {
         IHM_PrintInfo(ihm, "Connecting ...");
@@ -346,7 +346,7 @@ int main (int argc, char *argv[])
             ARSAL_PRINT(ARSAL_PRINT_ERROR, TAG, "- error :%s", ARCONTROLLER_Error_ToString(error));
             failed = 1;
         }
-    }*/
+    }
 
     if (!failed)
     {
@@ -512,7 +512,7 @@ eARCONTROLLER_ERROR decoderConfigCallback (ARCONTROLLER_Stream_Codec_t codec, vo
 eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *customData)
 {
     //Add a print line to check if it's working
-    printf("Inside didReceiveFrameCallback\n");
+    /*printf("Inside didReceiveFrameCallback\n");
 
     //OpenCV Colour Recognition Code
 
@@ -530,7 +530,7 @@ eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *
     cvReleaseImage(&currframe); 
 
     //Show Frame
-    cvShowImage("openCV Video Feed", iplFrame);
+    cvShowImage("openCV Video Feed", iplFrame);*/
 
     //Video Out Code
     if (videoOut != NULL)
@@ -542,6 +542,33 @@ eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *
                 fwrite(frame->data, frame->used, 1, videoOut);
 
                 fflush (videoOut);
+		// Create File Name
+                char filename[20] = "frameImage.jpg";
+
+                // Open File For Saving
+                FILE *img = fopen(filename, "w");
+
+                //Save Image to File
+                fwrite(frame->data, frame->used, 1, img);
+
+                //Close Image
+                fclose(img);
+
+                // Load Image. That Should be saved via the above filename.
+                IplImage *image = cvLoadImage(filename, CV_LOAD_IMAGE_COLOR);
+		// Error Checking for Image Data
+                if (!image)
+                {
+                    printf("Not a valid image\n");
+                    //Can force exit here
+                    //return 1;
+                } else {
+                    //Create Window
+                    cvNamedWindow("OpenCV Window", CV_WINDOW_AUTOSIZE); 
+
+                    //Display Image
+                    cvShowImage("OpenCV Window", image );
+                }
             }
             else if (writeImgs)
             {
