@@ -119,8 +119,8 @@ int main( int argc, char** argv )
 						// Turn Drone right a small amount
 					}
 					
-					// If object is on the left of the screen or not on screen at all
-					else {
+					// If object is on the left of the screen or not at all
+					else if (posX < xLBound) {
 						// Turn Drone left a small amount
 					}
 
@@ -131,6 +131,11 @@ int main( int argc, char** argv )
 
 		    iLastX = posX;
 		    iLastY = posY;
+		}
+		
+		// Image is too noisy and object is assumed to be too close
+		else {
+			// Reverse
 		}
 
 		cvShowImage("Thresholded Image", imgThresholded); //show the thresholded image
