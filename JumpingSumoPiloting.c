@@ -76,6 +76,8 @@
 #define FIFO_NAME "arsdk_fifo"
 
 #define IHM
+
+ #define DEBUG_MOVE 0
 /*****************************************
  *
  *             private header:
@@ -91,6 +93,8 @@
 
 static char fifo_dir[] = FIFO_DIR_PATTERN;
 static char fifo_name[128] = "";
+
+int run = 1;
 
 int gIHMRun = 1;
 char gErrorStr[ERROR_STR_LENGTH];
@@ -108,7 +112,8 @@ static void signal_handler(int signal)
 
 int main (int argc, char *argv[])
 {
-    // local declarations
+    //Create Window
+    cvNamedWindow("OpenCV Window", CV_WINDOW_AUTOSIZE);
     int failed = 0;
     ARDISCOVERY_Device_t *device = NULL;
     ARCONTROLLER_Device_t *deviceController = NULL;
@@ -163,13 +168,16 @@ int main (int argc, char *argv[])
             // fork the process to launch ffplay
             if ((child = fork()) == 0)
             {
-                execlp("xterm", "xterm", "-e", "mplayer", "-demuxer",  "lavf", fifo_name, "-benchmark", "-really-quiet", NULL);
+                execlp("ffplay", "ffplay", "-i", fifo_name, "-f", "mjpeg", NULL);
+                //execlp("mplayer", "mplayer", fifo_name, NULL);
+                //execlp("xterm", "xterm", "-e", "mplayer", "-demuxer",  "lavf", fifo_name, "-benchmark", "-really-quiet", NULL);
                 ARSAL_PRINT(ARSAL_PRINT_ERROR, TAG, "Missing mplayer, you will not see the video. Please install mplayer and xterm.");
                 return -1;
             }
         }
         else
         {
+            /*
             // create the video folder to store video images
             char answer = 'N';
             ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "Do you want to write image files on your file system ? You should have at least 50Mb. Y or N");
@@ -183,7 +191,7 @@ int main (int argc, char *argv[])
             else
             {
                 ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "You did not choose to write image files.");
-            }
+            }*/
         }
 
         if (DISPLAY_WITH_MPLAYER)
@@ -353,10 +361,11 @@ int main (int argc, char *argv[])
         IHM_PrintInfo(ihm, "Running ... (Arrow keys to move ; Spacebar to jump ; 'q' to quit)");
 
 #ifdef IHM
-        while (gIHMRun)
-        {
-            usleep(50);
-        }
+    while (gIHMRun)
+    {
+        detectObject();
+        usleep(50);
+    }
 #else
         int i = 20;
         ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "- sleep 20 ... ");
@@ -511,38 +520,15 @@ eARCONTROLLER_ERROR decoderConfigCallback (ARCONTROLLER_Stream_Codec_t codec, vo
 
 eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *customData)
 {
-    //Add a print line to check if it's working
-    /*printf("Inside didReceiveFrameCallback\n");
-
-    //OpenCV Colour Recognition Code
-
-    //While loop to continously fetch frame
-    //Setup Frame Variables
-    IplImage *currframe;
-    IplImage *iplFrame;
-
-    currframe = cvCreateImage(cvSize(320,240), IPL_DEPTH_8U, 3);
-    iplFrame = cvCreateImage(cvSize(320,240), IPL_DEPTH_8U, 3);
-
-    //Convert ARDrone Frame to IplImage
-    currframe->imageData = (char*)frame->data;
-    cvCvtColor(currframe, iplFrame, CV_BGR2RGB);
-    cvReleaseImage(&currframe); 
-
-    //Show Frame
-    cvShowImage("openCV Video Feed", iplFrame);*/
-
     //Video Out Code
     if (videoOut != NULL)
     {
         if (frame != NULL)
         {
-            if (DISPLAY_WITH_MPLAYER)
-            {
-                fwrite(frame->data, frame->used, 1, videoOut);
+            /*fwrite(frame->data, frame->used, 1, videoOut);
 
-                fflush (videoOut);
-		// Create File Name
+            fflush (videoOut);*/
+                  // Create File Name
                 char filename[20] = "frameImage.jpg";
 
                 // Open File For Saving
@@ -554,62 +540,8 @@ eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *
                 //Close Image
                 fclose(img);
 
-                // Load Image. That Should be saved via the above filename.
-                IplImage *image = cvLoadImage(filename, CV_LOAD_IMAGE_COLOR);
-		// Error Checking for Image Data
-                if (!image)
-                {
-                    printf("Not a valid image\n");
-                    //Can force exit here
-                    //return 1;
-                } else {
-                    //Create Window
-                    cvNamedWindow("OpenCV Window", CV_WINDOW_AUTOSIZE); 
-
-                    //Display Image
-                    cvShowImage("OpenCV Window", image );
-                }
-            }
-            else if (writeImgs)
-            {
-                //Original Save File
-/*                char filename[20];
-                snprintf(filename, sizeof(filename), "video/img_%d.jpg", frameNb);
-
-                frameNb++;
-                FILE *img = fopen(filename, "w");
-                fwrite(frame, frame->used, 1, img);
-                fclose(img);*/
-
-                // Create File Name
-                char filename[20] = "frameImage.jpg";
-
-                // Open File For Saving
-                FILE *img = fopen(filename, "w");
-
-                //Save Image to File
-                fwrite(frame, frame->used, 1, img);
-
-                //Close Image
-                fclose(img);
-
-                // Load Image. That Should be saved via the above filename.
-                IplImage *image = cvLoadImage(filename, CV_LOAD_IMAGE_COLOR);
-
-                // Error Checking for Image Data
-                if (!image)
-                {
-                    printf("Not a valid image\n");
-                    //Can force exit here
-                    //return 1;
-                } else {
-                    //Create Window
-                    cvNamedWindow("OpenCV Window", CV_WINDOW_AUTOSIZE); 
-
-                    //Display Image
-                    cvShowImage("OpenCV Window", image );
-                }
-            }
+            if (DISPLAY_WITH_MPLAYER)
+            {}
         }
         else
         {
@@ -629,6 +561,7 @@ eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *
 
 void onInputEvent (eIHM_INPUT_EVENT event, void *customData)
 {
+    int i = 0;
     // Manage IHM input events
     ARCONTROLLER_Device_t *deviceController = (ARCONTROLLER_Device_t *)customData;
     eARCONTROLLER_ERROR error = ARCONTROLLER_OK;
@@ -712,4 +645,159 @@ int customPrintCallback (eARSAL_PRINT_LEVEL level, const char *tag, const char *
     }
 
     return 1;
+}
+
+void detectObject ()
+{
+        //Load Saved Frame Image to OpenCV
+        IplImage *imgOriginal = cvLoadImage("frameImage.jpg", CV_LOAD_IMAGE_COLOR);
+        
+        //Check if Image is valid
+        if (!imgOriginal)
+        {
+            printf("Not a valid image\n");
+            //Can force exit here
+            //return 1;
+        } 
+        else 
+        {
+            //--Detection Code--
+            //Create Trackbar Window
+             cvNamedWindow("Control", CV_WINDOW_AUTOSIZE); //create a window called "Control"
+            
+            //Boundaries the define the middle of the screen
+            int xUBound = 420;
+            int xLBound = 220;
+            int yUBound = 280;
+            int yLBound = 160;
+
+            //Detection Values
+            int iLowH = 0;
+            int iHighH = 8;
+
+            int iLowS = 150;
+            int iHighS = 255;
+
+            int iLowV = 155;
+            int iHighV = 255;
+
+            //Create trackbars in "Control" window
+            cvCreateTrackbar("LowH", "Control", &iLowH, 255, NULL); //Hue (0 - 179)
+            cvCreateTrackbar("HighH", "Control", &iHighH, 255, NULL);
+
+            cvCreateTrackbar("LowS", "Control", &iLowS, 255, NULL); //Saturation (0 - 255)
+            cvCreateTrackbar("HighS", "Control", &iHighS, 255, NULL);
+
+            cvCreateTrackbar("LowV", "Control", &iLowV, 255, NULL);//Value (0 - 255)
+            cvCreateTrackbar("HighV", "Control", &iHighV, 255, NULL);
+
+            int iLastX = -1;
+            int iLastY = -1;
+
+
+            //Get Size of original Image
+            CvSize size = cvGetSize(imgOriginal);
+
+            IplImage *imgHSV = cvCreateImage(size, IPL_DEPTH_8U, 3);
+            //Convert the captured frame from BGR to HSV
+            cvCvtColor(imgOriginal, imgHSV, CV_BGR2HSV); 
+
+            //IplImage *imgThresholded;
+            CvMat *imgThresholded = cvCreateMat(size.height, size.width, CV_8UC1);;
+
+            // //Range
+            cvInRangeS(imgHSV, cvScalar(iLowH, iLowS, iLowV, 0), cvScalar(iHighH, iHighS, iHighV, 0), imgThresholded); //Threshold the image
+
+            //morphological opening (removes small objects from the foreground)
+            cvErode(imgThresholded, imgThresholded, cvCreateStructuringElementEx(3, 3, 0, 0, CV_SHAPE_ELLIPSE, NULL), 1);
+            
+            cvDilate( imgThresholded, imgThresholded, cvCreateStructuringElementEx(3, 3, 0, 0, CV_SHAPE_ELLIPSE, NULL), 1);
+            //morphological closing (removes small holes from the foreground)
+            cvDilate( imgThresholded, imgThresholded, cvCreateStructuringElementEx(3, 3, 0, 0, CV_SHAPE_ELLIPSE, NULL), 1);
+            cvErode(imgThresholded, imgThresholded, cvCreateStructuringElementEx(3, 3, 0, 0, CV_SHAPE_ELLIPSE, NULL), 1);
+
+            //Calculate the moments of the thresholded image
+            CvMoments oMoments;
+            cvMoments(imgThresholded, &oMoments, 0);
+
+            double dM01 = oMoments.m01;
+            double dM10 = oMoments.m10;
+            double dArea = oMoments.m00;
+
+            // if the area <= 5000, I consider that the there are no object in the image and it's because of the noise, the area is not zero
+            if (dArea > 5000)
+            {
+                //calculate the position of the ball
+                int posX = dM10 / dArea;
+                int posY = dM01 / dArea;
+            
+                if (iLastX >= 0 && iLastY >= 0 && posX >= 0 && posY >= 0) {
+                    // If object is in middle of screen
+                    if (posX > xLBound && posX < xUBound) {
+                        
+                        //If it covers this amount of the screen then stop it from moving
+                        if(abs(dArea) > 7250000){
+                            if(DEBUG_MOVE == 1){
+                                printf("GOAL\n");
+                            }
+
+                            // CALLUM: Stop the drone (Set movement to 0).
+
+                            // *****END*****
+
+                        } else {
+                            if(DEBUG_MOVE == 1){
+                                printf("Forward = %d\n", abs(dArea)) ;
+                            }
+                            // CALLUM: Move forward (Depending on the camera speed, this may need to be adjusted).
+
+                            // *****END*****
+                            
+                        }
+                    }
+                    
+                    else {
+                        // If object is on the right of the screen
+                        if (posX > xUBound ) {
+                            if(DEBUG_MOVE == 1){
+                                printf("Right\n");
+                            }
+
+                            // CALLUM: Move right (Again if the camera is too slow then you will need to slow down the turn speed).
+
+                            // *****END*****
+                            
+                        }
+                        
+                        // If object is on the left of the screen or not at all
+                        else if (posX < xLBound) {
+                            if(DEBUG_MOVE == 1){
+                                printf("Left\n");
+                            }
+
+                            // CALLUM: Move left (The last movement behaviour, if testing is good then you are done.).
+
+                            // *****END*****
+                        }
+
+                    }
+                    
+                }
+
+                iLastX = posX;
+                iLastY = posY;
+            }
+
+            //Display Threshold Image
+            cvShowImage("Thresholded Image", imgThresholded);
+
+            //Display Image
+            cvShowImage("OpenCV Window", imgOriginal);
+
+            //Delay Image by 1 Millisecond
+            cvWaitKey(1);
+
+            //Free Image
+            cvReleaseImage(&imgOriginal);
+        }
 }
