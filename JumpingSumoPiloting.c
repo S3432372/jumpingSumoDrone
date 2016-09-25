@@ -77,7 +77,7 @@
 
 #define IHM
 
- #define DEBUG_MOVE 0
+#define DEBUG_MOVE 0
 /*****************************************
  *
  *             private header:
@@ -104,6 +104,10 @@ FILE *videoOut = NULL;
 int writeImgs = 0;
 int frameNb = 0;
 ARSAL_Sem_t stateSem;
+
+
+int iLastX = -1;
+int iLastY = -1;
 
 static void signal_handler(int signal)
 {
@@ -363,8 +367,8 @@ int main (int argc, char *argv[])
 #ifdef IHM
     while (gIHMRun)
     {
-        detectObject();
-        usleep(50);
+        detectObject(deviceController);
+        usleep(500);
     }
 #else
         int i = 20;
@@ -539,9 +543,6 @@ eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *
 
                 //Close Image
                 fclose(img);
-
-            if (DISPLAY_WITH_MPLAYER)
-            {}
         }
         else
         {
@@ -561,72 +562,26 @@ eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *
 
 void onInputEvent (eIHM_INPUT_EVENT event, void *customData)
 {
-    int i = 0;
-    // Manage IHM input events
     ARCONTROLLER_Device_t *deviceController = (ARCONTROLLER_Device_t *)customData;
     eARCONTROLLER_ERROR error = ARCONTROLLER_OK;
-
-    switch (event)
+    if(deviceController != NULL)
     {
-    case IHM_INPUT_EVENT_EXIT:
-        IHM_PrintInfo(ihm, "IHM_INPUT_EVENT_EXIT ...");
-        gIHMRun = 0;
-        break;
-    case IHM_INPUT_EVENT_JUMP:
-        if(deviceController != NULL)
+        /*if(event == IHM_INPUT_EVENT_FORWARD)
         {
-            // send a jump command to the JS
-            error = deviceController->jumpingSumo->sendAnimationsJump (deviceController->jumpingSumo, ARCOMMANDS_JUMPINGSUMO_ANIMATIONS_JUMP_TYPE_HIGH);
-            IHM_PrintInfo(ihm, "IHM_INPUT_EVENT_JUMP ...");
+            //nothing
         }
-        break;
-    case IHM_INPUT_EVENT_FORWARD:
-        if(deviceController != NULL)
-        {
-            IHM_PrintInfo(ihm, "IHM_INPUT_EVENT_FORWARD ...");
-            // set the flag and speed value of the piloting command
-            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
-            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 50);
-        }
-        break;
-    case IHM_INPUT_EVENT_BACK:
-        if(deviceController != NULL)
-        {
-            IHM_PrintInfo(ihm, "IHM_INPUT_EVENT_BACK ...");
-            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
-            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, -50);
-        }
-        break;
-    case IHM_INPUT_EVENT_RIGHT:
-        if(deviceController != NULL)
-        {
-            IHM_PrintInfo(ihm, "IHM_INPUT_EVENT_RIGHT ...");
-            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
-            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 50);
-        }
-        break;
-    case IHM_INPUT_EVENT_LEFT:
-        if(deviceController != NULL)
-        {
-            IHM_PrintInfo(ihm, "IHM_INPUT_EVENT_LEFT ...");
-            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
-            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, -50);
-        }
-        break;
-    case IHM_INPUT_EVENT_NONE:
-        if(deviceController != NULL)
+        else
         {
             error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
             error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
             error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);
+        }*/
+        
+        if(event == IHM_INPUT_EVENT_EXIT)
+        {
+            gIHMRun = 0;
         }
-        break;
-    default:
-        break;
-
     }
-
-    // This should be improved, here it just displays that one error occured
     if (error != ARCONTROLLER_OK)
     {
         IHM_PrintInfo(ihm, "Error sending an event");
@@ -647,8 +602,11 @@ int customPrintCallback (eARSAL_PRINT_LEVEL level, const char *tag, const char *
     return 1;
 }
 
-void detectObject ()
+void detectObject(ARCONTROLLER_Device_t *deviceController)
 {
+    eARCONTROLLER_ERROR error = ARCONTROLLER_OK;
+    if(deviceController != NULL)
+    {
         //Load Saved Frame Image to OpenCV
         IplImage *imgOriginal = cvLoadImage("frameImage.jpg", CV_LOAD_IMAGE_COLOR);
         
@@ -672,14 +630,17 @@ void detectObject ()
             int yLBound = 160;
 
             //Detection Values
-            int iLowH = 0;
-            int iHighH = 8;
 
-            int iLowS = 150;
+
+            int iLowH = 0;
+            int iHighH = 14;
+
+            int iLowS = 0;
             int iHighS = 255;
 
-            int iLowV = 155;
+            int iLowV = 143;
             int iHighV = 255;
+
 
             //Create trackbars in "Control" window
             cvCreateTrackbar("LowH", "Control", &iLowH, 255, NULL); //Hue (0 - 179)
@@ -691,8 +652,6 @@ void detectObject ()
             cvCreateTrackbar("LowV", "Control", &iLowV, 255, NULL);//Value (0 - 255)
             cvCreateTrackbar("HighV", "Control", &iHighV, 255, NULL);
 
-            int iLastX = -1;
-            int iLastY = -1;
 
 
             //Get Size of original Image
@@ -736,13 +695,14 @@ void detectObject ()
                     if (posX > xLBound && posX < xUBound) {
                         
                         //If it covers this amount of the screen then stop it from moving
-                        if(abs(dArea) > 7250000){
+                        if(abs(dArea) > 6000000){
                             if(DEBUG_MOVE == 1){
                                 printf("GOAL\n");
                             }
-
                             // CALLUM: Stop the drone (Set movement to 0).
-
+                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
+                            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
+                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);
                             // *****END*****
 
                         } else {
@@ -750,7 +710,12 @@ void detectObject ()
                                 printf("Forward = %d\n", abs(dArea)) ;
                             }
                             // CALLUM: Move forward (Depending on the camera speed, this may need to be adjusted).
-
+                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
+                            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 5);
+                            /*usleep(1000000);
+                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
+                            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
+                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);*/
                             // *****END*****
                             
                         }
@@ -762,9 +727,13 @@ void detectObject ()
                             if(DEBUG_MOVE == 1){
                                 printf("Right\n");
                             }
-
                             // CALLUM: Move right (Again if the camera is too slow then you will need to slow down the turn speed).
-
+                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
+                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 2);
+                            /*usleep(1000000);
+                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
+                            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
+                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);*/
                             // *****END*****
                             
                         }
@@ -774,16 +743,17 @@ void detectObject ()
                             if(DEBUG_MOVE == 1){
                                 printf("Left\n");
                             }
-
                             // CALLUM: Move left (The last movement behaviour, if testing is good then you are done.).
-
+                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
+                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, -2);
+                            /*usleep(1000000);
+                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
+                            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
+                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);*/
                             // *****END*****
                         }
-
                     }
-                    
                 }
-
                 iLastX = posX;
                 iLastY = posY;
             }
@@ -800,4 +770,14 @@ void detectObject ()
             //Free Image
             cvReleaseImage(&imgOriginal);
         }
+
+        if (error != ARCONTROLLER_OK)
+        {
+            IHM_PrintInfo(ihm, "Error sending an event");
+        }
+    } 
+    else
+    {
+        printf("device NULL\n");
+    }
 }
