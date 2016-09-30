@@ -1,0 +1,30 @@
+    //Detection Values (Average)
+    int iLowH = 161;
+    int iHighH = 182;
+
+    int iLowS = 59;
+    int iHighS = 200;
+
+    int iLowV = 0;
+	int iHighV = 125;
+
+/*	//Strict
+    int iLowH = 161;
+    int iHighH = 182;
+
+    int iLowS = 59;
+    int iHighS = 200;
+
+    int iLowV = 73;
+	int iHighV = 125;*/
+
+/*	//Loose
+	int iLowH = 152;
+    int iHighH = 202;
+
+    int iLowS = 63;
+    int iHighS = 200;
+
+    int iLowV = 0;
+	int iHighV = 255;
+*/
