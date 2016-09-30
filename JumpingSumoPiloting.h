@@ -35,6 +35,8 @@
 #include <ihm.h>
 
 #include <libARController/ARController.h>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
 // called when the state of the device controller has changed
 void stateChanged (eARCONTROLLER_DEVICE_STATE newState, eARCONTROLLER_ERROR error, void *customData);
@@ -58,4 +60,35 @@ int customPrintCallback (eARSAL_PRINT_LEVEL level, const char *tag, const char *
 #endif /* _JUMPINGSUMO_PILOTING_H_ */
 
 // Detection Function
-void detectObject ();
+void detectObject (ARCONTROLLER_Device_t *deviceController);
+
+// openCV functions Begin
+int validateImage(IplImage *imgOriginal);
+
+void createTrackbar(int iLowH, int iHighH, int iLowS, int iHighS, int iLowV, int iHighV);
+
+void displayWindows(IplImage *imgOriginal, CvMat *imgThresholded);
+// openCV functions End
+
+
+//movement functions beign
+void stopMovement(ARCONTROLLER_Device_t *deviceController);
+
+void moveForward(ARCONTROLLER_Device_t *deviceController);
+
+void turnRight(ARCONTROLLER_Device_t *deviceController);
+
+void turnLeft(ARCONTROLLER_Device_t *deviceController);
+
+void quickTurnRight(ARCONTROLLER_Device_t *deviceController);
+//movement functions end
+
+
+
+
+
+
+
+
+
+

@@ -28,18 +28,20 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
   SUCH DAMAGE.
 */
-/**
- * @file JumpingSumoPiloting.c
- * @brief This file contains sources about basic arsdk example sending commands to a JumpingSumo for piloting it and make it jump it and receiving its battery level
- * @date 15/01/2015
- */
 
-/*****************************************
- *
- *             include file :
- *
- *****************************************/
 
+/*
+* Code Modified by Group 106, Programming Project 1, COSC 2408, RMIT.
+*
+*            Members: 
+*   Mark Borazio - s3434112
+*   Callum Hill - s3430060
+*   Dallas Nguyen - s3432372
+*   Matthew Williams - s3380390
+*/
+
+
+/*           include          */
 #include <stdlib.h>
 #include <curses.h>
 #include <string.h>
@@ -54,15 +56,11 @@
 #include "JumpingSumoPiloting.h"
 #include "ihm.h"
 
-//Open CV Libs
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
-/*****************************************
- *
- *             define :
- *
- *****************************************/
+
+/*           define          */
 #define TAG "Group106"
 
 #define ERROR_STR_LENGTH 2048
@@ -77,24 +75,17 @@
 
 #define IHM
 
+// Set to 1 to show print statements for drone movement
 #define DEBUG_MOVE 0
-/*****************************************
- *
- *             private header:
- *
- ****************************************/
 
 
-/*****************************************
- *
- *             implementation :
- *
- *****************************************/
+
+
+
+/*           Implementation          */
 
 static char fifo_dir[] = FIFO_DIR_PATTERN;
 static char fifo_name[128] = "";
-
-int run = 1;
 
 int gIHMRun = 1;
 char gErrorStr[ERROR_STR_LENGTH];
@@ -104,7 +95,6 @@ FILE *videoOut = NULL;
 int writeImgs = 0;
 int frameNb = 0;
 ARSAL_Sem_t stateSem;
-
 
 int iLastX = -1;
 int iLastY = -1;
@@ -116,8 +106,9 @@ static void signal_handler(int signal)
 
 int main (int argc, char *argv[])
 {
-    //Create Window
+    //Create Window for openCV
     cvNamedWindow("OpenCV Window", CV_WINDOW_AUTOSIZE);
+    
     int failed = 0;
     ARDISCOVERY_Device_t *device = NULL;
     ARCONTROLLER_Device_t *deviceController = NULL;
@@ -173,31 +164,10 @@ int main (int argc, char *argv[])
             if ((child = fork()) == 0)
             {
                 execlp("ffplay", "ffplay", "-i", fifo_name, "-f", "mjpeg", NULL);
-                //execlp("mplayer", "mplayer", fifo_name, NULL);
-                //execlp("xterm", "xterm", "-e", "mplayer", "-demuxer",  "lavf", fifo_name, "-benchmark", "-really-quiet", NULL);
                 ARSAL_PRINT(ARSAL_PRINT_ERROR, TAG, "Missing mplayer, you will not see the video. Please install mplayer and xterm.");
                 return -1;
             }
         }
-        else
-        {
-            /*
-            // create the video folder to store video images
-            char answer = 'N';
-            ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "Do you want to write image files on your file system ? You should have at least 50Mb. Y or N");
-            scanf(" %c", &answer);
-            if (answer == 'Y' || answer == 'y')
-            {
-                ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "You choose to write image files.");
-                writeImgs = 1;
-                mkdir("video", S_IRWXU);
-            }
-            else
-            {
-                ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "You did not choose to write image files.");
-            }*/
-        }
-
         if (DISPLAY_WITH_MPLAYER)
         {
             videoOut = fopen(fifo_name, "w");
@@ -248,7 +218,6 @@ int main (int argc, char *argv[])
     }
 
     //Discover device
-    
     ARSAL_PRINT(ARSAL_PRINT_INFO, TAG, "- init discovey device ... ");
     eARDISCOVERY_ERROR errorDiscovery = ARDISCOVERY_OK;
 
@@ -362,7 +331,7 @@ int main (int argc, char *argv[])
 
     if (!failed)
     {
-        IHM_PrintInfo(ihm, "Running ... (Arrow keys to move ; Spacebar to jump ; 'q' to quit)");
+        IHM_PrintInfo(ihm, "Running ... 'q' to quit)");
 
 #ifdef IHM
     while (gIHMRun)
@@ -429,11 +398,7 @@ int main (int argc, char *argv[])
     return EXIT_SUCCESS;
 }
 
-/*****************************************
- *
- *             private implementation:
- *
- ****************************************/
+/*           Private Implementation          */
 
 // called when the state of the device controller has changed
 void stateChanged (eARCONTROLLER_DEVICE_STATE newState, eARCONTROLLER_ERROR error, void *customData)
@@ -518,10 +483,12 @@ void batteryStateChanged (uint8_t percent)
 eARCONTROLLER_ERROR decoderConfigCallback (ARCONTROLLER_Stream_Codec_t codec, void *customData)
 {
     ARSAL_PRINT(ARSAL_PRINT_ERROR, TAG, "decoderConfigCallback codec.type :%d", codec.type);
-
     return ARCONTROLLER_OK;
 }
 
+// Called each time a frame is recorded by the drone. 
+// For this project we are saving the image data to the loacl project folder, forever overwritng the lastimage.
+// So that we can do some image processing in droneMovement()
 eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *customData)
 {
     //Video Out Code
@@ -529,20 +496,17 @@ eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *
     {
         if (frame != NULL)
         {
-            /*fwrite(frame->data, frame->used, 1, videoOut);
+            // Create File Name
+            char filename[20] = "frameImage.jpg";
 
-            fflush (videoOut);*/
-                  // Create File Name
-                char filename[20] = "frameImage.jpg";
+            // Open File For Saving
+            FILE *img = fopen(filename, "w");
 
-                // Open File For Saving
-                FILE *img = fopen(filename, "w");
+            //Save Image to File
+            fwrite(frame->data, frame->used, 1, img);
 
-                //Save Image to File
-                fwrite(frame->data, frame->used, 1, img);
-
-                //Close Image
-                fclose(img);
+            //Close Image
+            fclose(img);
         }
         else
         {
@@ -553,30 +517,19 @@ eARCONTROLLER_ERROR didReceiveFrameCallback (ARCONTROLLER_Frame_t *frame, void *
     {
         ARSAL_PRINT(ARSAL_PRINT_WARNING, TAG, "videoOut is NULL.");
     }
-
     return ARCONTROLLER_OK;
 }
 
 
 // IHM callbacks:
-
+// The only  user input accepted is when the program executions should end
 void onInputEvent (eIHM_INPUT_EVENT event, void *customData)
 {
     ARCONTROLLER_Device_t *deviceController = (ARCONTROLLER_Device_t *)customData;
     eARCONTROLLER_ERROR error = ARCONTROLLER_OK;
     if(deviceController != NULL)
     {
-        /*if(event == IHM_INPUT_EVENT_FORWARD)
-        {
-            //nothing
-        }
-        else
-        {
-            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
-            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
-            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);
-        }*/
-        
+        // end execution on 'q' press
         if(event == IHM_INPUT_EVENT_EXIT)
         {
             gIHMRun = 0;
@@ -591,38 +544,31 @@ void onInputEvent (eIHM_INPUT_EVENT event, void *customData)
 int customPrintCallback (eARSAL_PRINT_LEVEL level, const char *tag, const char *format, va_list va)
 {
     // Custom callback used when ncurses is runing for not disturb the IHM
-
     if ((level == ARSAL_PRINT_ERROR) && (strcmp(TAG, tag) == 0))
     {
         // Save the last Error
         vsnprintf(gErrorStr, (ERROR_STR_LENGTH - 1), format, va);
         gErrorStr[ERROR_STR_LENGTH - 1] = '\0';
     }
-
     return 1;
 }
 
+
+// Main detection function
+// Opens the saved images didRecieveFramCallBack
+// Proccesses the image to decide the appropriate movement
+// Then move the drone accordingly
 void detectObject(ARCONTROLLER_Device_t *deviceController)
 {
-    eARCONTROLLER_ERROR error = ARCONTROLLER_OK;
     if(deviceController != NULL)
     {
         //Load Saved Frame Image to OpenCV
         IplImage *imgOriginal = cvLoadImage("frameImage.jpg", CV_LOAD_IMAGE_COLOR);
-        
         //Check if Image is valid
-        if (!imgOriginal)
-        {
-            printf("Not a valid image\n");
-            //Can force exit here
-            //return 1;
-        } 
-        else 
+        int validImage = validateImage(imgOriginal);
+        if (validImage == 1) // if equal to 1 then the image is valid
         {
             //--Detection Code--
-            //Create Trackbar Window
-             cvNamedWindow("Control", CV_WINDOW_AUTOSIZE); //create a window called "Control"
-            
             //Boundaries the define the middle of the screen
             int xUBound = 420;
             int xLBound = 220;
@@ -630,49 +576,37 @@ void detectObject(ARCONTROLLER_Device_t *deviceController)
             int yLBound = 160;
 
             //Detection Values
-
-
             int iLowH = 0;
-            int iHighH = 14;
+            int iHighH = 10;
 
-            int iLowS = 0;
+            int iLowS = 100;
             int iHighS = 255;
 
             int iLowV = 143;
             int iHighV = 255;
 
-
-            //Create trackbars in "Control" window
-            cvCreateTrackbar("LowH", "Control", &iLowH, 255, NULL); //Hue (0 - 179)
-            cvCreateTrackbar("HighH", "Control", &iHighH, 255, NULL);
-
-            cvCreateTrackbar("LowS", "Control", &iLowS, 255, NULL); //Saturation (0 - 255)
-            cvCreateTrackbar("HighS", "Control", &iHighS, 255, NULL);
-
-            cvCreateTrackbar("LowV", "Control", &iLowV, 255, NULL);//Value (0 - 255)
-            cvCreateTrackbar("HighV", "Control", &iHighV, 255, NULL);
-
-
+            // create trackbar window
+            createTrackbar(iLowH, iHighH, iLowS, iHighS, iLowV, iHighV);
 
             //Get Size of original Image
             CvSize size = cvGetSize(imgOriginal);
-
             IplImage *imgHSV = cvCreateImage(size, IPL_DEPTH_8U, 3);
+            
             //Convert the captured frame from BGR to HSV
             cvCvtColor(imgOriginal, imgHSV, CV_BGR2HSV); 
 
             //IplImage *imgThresholded;
             CvMat *imgThresholded = cvCreateMat(size.height, size.width, CV_8UC1);;
 
-            // //Range
+            //Range
             cvInRangeS(imgHSV, cvScalar(iLowH, iLowS, iLowV, 0), cvScalar(iHighH, iHighS, iHighV, 0), imgThresholded); //Threshold the image
 
             //morphological opening (removes small objects from the foreground)
             cvErode(imgThresholded, imgThresholded, cvCreateStructuringElementEx(3, 3, 0, 0, CV_SHAPE_ELLIPSE, NULL), 1);
-            
-            cvDilate( imgThresholded, imgThresholded, cvCreateStructuringElementEx(3, 3, 0, 0, CV_SHAPE_ELLIPSE, NULL), 1);
+            cvDilate(imgThresholded, imgThresholded, cvCreateStructuringElementEx(3, 3, 0, 0, CV_SHAPE_ELLIPSE, NULL), 1);
+
             //morphological closing (removes small holes from the foreground)
-            cvDilate( imgThresholded, imgThresholded, cvCreateStructuringElementEx(3, 3, 0, 0, CV_SHAPE_ELLIPSE, NULL), 1);
+            cvDilate(imgThresholded, imgThresholded, cvCreateStructuringElementEx(3, 3, 0, 0, CV_SHAPE_ELLIPSE, NULL), 1);
             cvErode(imgThresholded, imgThresholded, cvCreateStructuringElementEx(3, 3, 0, 0, CV_SHAPE_ELLIPSE, NULL), 1);
 
             //Calculate the moments of the thresholded image
@@ -689,95 +623,152 @@ void detectObject(ARCONTROLLER_Device_t *deviceController)
                 //calculate the position of the ball
                 int posX = dM10 / dArea;
                 int posY = dM01 / dArea;
-            
+        
                 if (iLastX >= 0 && iLastY >= 0 && posX >= 0 && posY >= 0) {
                     // If object is in middle of screen
-                    if (posX > xLBound && posX < xUBound) {
-                        
+                    if (posX > xLBound && posX < xUBound) 
+                    {
                         //If it covers this amount of the screen then stop it from moving
-                        if(abs(dArea) > 6000000){
-                            if(DEBUG_MOVE == 1){
-                                printf("GOAL\n");
-                            }
-                            // CALLUM: Stop the drone (Set movement to 0).
-                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
-                            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
-                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);
-                            // *****END*****
-
-                        } else {
-                            if(DEBUG_MOVE == 1){
-                                printf("Forward = %d\n", abs(dArea)) ;
-                            }
-                            // CALLUM: Move forward (Depending on the camera speed, this may need to be adjusted).
-                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
-                            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 5);
-                            /*usleep(1000000);
-                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
-                            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
-                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);*/
-                            // *****END*****
-                            
+                        if(fabs(dArea) > 6000000)
+                        {
+                            stopMovement(deviceController);
+                        } 
+                        else 
+                        {
+                            moveForward(deviceController);   
                         }
                     }
-                    
-                    else {
+                    else 
+                    {
                         // If object is on the right of the screen
-                        if (posX > xUBound ) {
-                            if(DEBUG_MOVE == 1){
-                                printf("Right\n");
-                            }
-                            // CALLUM: Move right (Again if the camera is too slow then you will need to slow down the turn speed).
-                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
-                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 2);
-                            /*usleep(1000000);
-                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
-                            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
-                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);*/
-                            // *****END*****
-                            
+                        if (posX > xUBound) 
+                        {
+                            turnRight(deviceController);
                         }
-                        
                         // If object is on the left of the screen or not at all
-                        else if (posX < xLBound) {
-                            if(DEBUG_MOVE == 1){
-                                printf("Left\n");
-                            }
-                            // CALLUM: Move left (The last movement behaviour, if testing is good then you are done.).
-                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
-                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, -2);
-                            /*usleep(1000000);
-                            error = deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
-                            error = deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
-                            error = deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);*/
-                            // *****END*****
+                        else if(posX < xLBound) 
+                        {
+                            turnLeft(deviceController);
                         }
                     }
                 }
                 iLastX = posX;
                 iLastY = posY;
             }
-
-            //Display Threshold Image
-            cvShowImage("Thresholded Image", imgThresholded);
-
-            //Display Image
-            cvShowImage("OpenCV Window", imgOriginal);
-
-            //Delay Image by 1 Millisecond
-            cvWaitKey(1);
-
-            //Free Image
-            cvReleaseImage(&imgOriginal);
-        }
-
-        if (error != ARCONTROLLER_OK)
-        {
-            IHM_PrintInfo(ihm, "Error sending an event");
+            else
+            {
+                quickTurnRight(deviceController);
+                usleep(13000);
+                stopMovement(deviceController);
+            }
+            displayWindows(imgOriginal, imgThresholded);
         }
     } 
+}
+
+//OpenCV Functions Begin
+
+//check to see if the image is null or not
+int validateImage(IplImage *imgOriginal)
+{
+    if (!imgOriginal)
+    {
+        printf("Not a valid image\n");
+        return 0;    
+    }
     else
     {
-        printf("device NULL\n");
-    }
+        return 1;
+    } 
 }
+
+// create the trackbar window
+void createTrackbar(int iLowH, int iHighH, int iLowS, int iHighS, int iLowV, int iHighV)
+{
+    //Create Trackbar Window
+    cvNamedWindow("Control", CV_WINDOW_AUTOSIZE); //create a window called "Control"
+    //Create trackbars in "Control" window
+    cvCreateTrackbar("LowH", "Control", &iLowH, 255, NULL); //Hue (0 - 179)
+    cvCreateTrackbar("HighH", "Control", &iHighH, 255, NULL);
+
+    cvCreateTrackbar("LowS", "Control", &iLowS, 255, NULL); //Saturation (0 - 255)
+    cvCreateTrackbar("HighS", "Control", &iHighS, 255, NULL);
+
+    cvCreateTrackbar("LowV", "Control", &iLowV, 255, NULL);//Value (0 - 255)
+    cvCreateTrackbar("HighV", "Control", &iHighV, 255, NULL);
+}
+
+// display the threshold and image stream windows.
+void displayWindows(IplImage *imgOriginal, CvMat *imgThresholded)
+{
+    //Display Threshold Image
+    cvShowImage("Thresholded Image", imgThresholded);
+    //Display Image
+    cvShowImage("OpenCV Window", imgOriginal);
+    //Delay Image by 1 Millisecond
+    cvWaitKey(1);
+    //Free Image
+    cvReleaseImage(&imgOriginal);
+}
+
+//OpenCV Functions End
+
+//Movement Functions Begin
+//Completely stop drone Movement
+void stopMovement(ARCONTROLLER_Device_t *deviceController)
+{
+    if(DEBUG_MOVE == 1)
+    {
+        printf("Stop\n");
+    }
+    deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 0);
+    deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 0);
+    deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 0);
+}
+
+// Move Drone Forward
+void moveForward(ARCONTROLLER_Device_t *deviceController)
+{
+    if(DEBUG_MOVE == 1)
+    {
+        printf("Forward\n");
+    }
+    deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
+    deviceController->jumpingSumo->setPilotingPCMDSpeed (deviceController->jumpingSumo, 15);
+}
+
+// Rotate Drone to the right
+void turnRight(ARCONTROLLER_Device_t *deviceController)
+{
+    if(DEBUG_MOVE == 1)
+    {
+        printf("Right\n");
+    }
+    deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
+    deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 5);
+}
+
+// Rotate Drone to the left
+void turnLeft(ARCONTROLLER_Device_t *deviceController)
+{
+    if(DEBUG_MOVE == 1)
+    {
+        printf("Left\n");
+    }
+    deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
+    deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, -5);
+}
+
+// Rotate Drone to the right at a quick speed
+void quickTurnRight(ARCONTROLLER_Device_t *deviceController)
+{
+    if(DEBUG_MOVE == 1)
+    {
+        printf("Quick Right\n");
+    }
+    deviceController->jumpingSumo->setPilotingPCMDFlag (deviceController->jumpingSumo, 1);
+    deviceController->jumpingSumo->setPilotingPCMDTurn (deviceController->jumpingSumo, 20);
+}
+//Movement Functions End
+
+

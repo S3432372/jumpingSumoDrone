@@ -1,31 +1,56 @@
-EXEC_NAME=JumpingSumoPiloting
+EXEC_NAME=SearchAndRescue
 
 #ARDrone SDK Directory
-SDK_DIR=/home/user/sdk/out/Unix-base/staging/usr
+SDK_DIR=/Users/Caltheduck/Desktop/sdk/out/Unix-base/staging/usr
 
 IDIR=./
 CC=gcc
 CFLAGS=-I$(IDIR) -I $(SDK_DIR)/include \
 `pkg-config --cflags opencv`
 
-#OpenCV Library Directory (Including OpenCV2)
-#CPPFLAGS= -I/home/user/opencv-2.4.13/include/opencv \
--I/home/user/opencv-2.4.13/include/opencv2
-
-#Libraries
-#LDLIBS= -lopencv_core -lopencv_imgproc -lopencv_highgui \
-		 -lopencv_ml -lopencv_video -lopencv_features2d \
-	 -lopencv_calib3d -lopencv_objdetect \
-	 -lv4l1 -lv4l2 -lv4lconvert -lopencv_imgcodecs
-
 LDLIBS = `pkg-config --libs opencv`
 OBJDIR=obj
 LDIR = $(SDK_DIR)/lib
 
-EXTERNAL_LIB=-lncurses -ljson
+EXTERNAL_LIB=-lncurses
 
-LIBS=-L$(SDK_DIR)/lib -larcommands -larcontroller -lardiscovery -larmedia -larnetwork -larnetworkal -larsal -larstream -larstream2 $(EXTERNAL_LIB)
-LIBS_DBG=-L$(SDK_DIR)/lib -larsal_dbg -larcommands_dbg -larnetwork_dbg -larnetworkal_dbg -lardiscovery_dbg -larstream_dbg $(EXTERNAL_LIB)
+#LIBS=-L$(LDIR) -larcommands -larcontroller -lardiscovery \
+-larmedia -larnetwork -larnetworkal -larstream -larsal- lardatatransfer -larutils -lcurl -lssl\
+-larstream2 $(EXTERNAL_LIB)
+
+#LIBS = \
+$(LDIR)/libardatatransfer.a $(LDIR)/libardatatransfer.so\
+$(LDIR)/libarcontroller.a $(LDIR)/libarcontroller.so\
+$(LDIR)/libarstream2.a $(LDIR)/libarstream2.so\
+$(LDIR)/libarsal.a $(LDIR)/libarsal.so\
+$(LDIR)/libarcommands.a $(LDIR)/libarcommands.so\
+$(LDIR)/libardiscovery.a $(LDIR)/libardiscovery.so\
+$(LDIR)/libarmedia.a $(LDIR)/libarmedia.so\
+$(LDIR)/libarnetwork.a $(LDIR)/libarnetwork.so\
+$(LDIR)/libarnetworkal.a $(LDIR)/libarnetworkal.so\
+$(LDIR)/libarstream.a $(LDIR)/libarstream.so\
+$(LDIR)/libjson.a $(LDIR)/libjson.so\
+$(LDIR)/libarutils.a $(LDIR)/libarutils.so\
+$(LDIR)/libcurl.a $(LDIR)/libcurl.so\
+$(EXTERNAL_LIB)
+
+LIBS = \
+$(LDIR)/libardatatransfer.a\
+$(LDIR)/libarcontroller.a\
+$(LDIR)/libarstream2.a\
+$(LDIR)/libarsal.a\
+$(LDIR)/libarcommands.a\
+$(LDIR)/libardiscovery.a\
+$(LDIR)/libarmedia.a\
+$(LDIR)/libarnetwork.a\
+$(LDIR)/libarnetworkal.a\
+$(LDIR)/libarstream.a\
+$(LDIR)/libjson.a\
+$(LDIR)/libarutils.a\
+$(LDIR)/libcurl.a\
+$(EXTERNAL_LIB)
+
+#LIBS_DBG=-L$(SDK_DIR)/lib -larsal_dbg -larcommands_dbg -larnetwork_dbg -larnetworkal_dbg -lardiscovery_dbg -larstream_dbg $(EXTERNAL_LIB)
 
 #Dependencies
 _DEPS = JumpingSumoPiloting.h ihm.h
