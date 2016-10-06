@@ -11,7 +11,7 @@ The jumping sumo drone project is a semester long programming assignment for  RM
 <h2>Make File Instructions</h2>
 <h3>Edit this line in the make file</h3>
 
-1. [Line 4] SDK_DIR= "..."<br>Change this line to the location of your ARDroneSDK3 Sample file directory "sdk/out/Unix-base/staging/usr".
+1. [Line 4] SDK_DIR=/\<DIRECTORY_TO_SDK>/sdk/out/Unix-base/staging/usr<br>Change "\<DIRECTORY_TO_SDK>" to the location of your ARDroneSDK3 Sample file directory "sdk/out/Unix-base/staging/usr".
 
 <h3>In the terminal run these commands</h3>
 
