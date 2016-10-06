@@ -1,4 +1,4 @@
-# Project 106 - Jumping Sumo Drone
+# RMIT Programming Project 1 - Jumping Sumo Drone
 <h2>About</h2>
 The jumping sumo drone project is a semester long programming assignment for  RMIT, Semester 2, [COSC2408 Programming Project 1](http://www1.rmit.edu.au/courses/039985 "Programming Project 1"). The goal of the project is simply to detect a predetermined object using the drone's camera by searching for it and then moving towards it when found.
 
